@@ -4,7 +4,7 @@ ipnames = {}
 ipnames.data = {}
 ipnames.tmp_data = {}
 ipnames.changes = false
-ipnames.save_interval = 480
+ipnames.save_interval = 240
 ipnames.save_time = 0
 ipnames.file = minetest.get_worldpath().."/ipnames.data"
 
