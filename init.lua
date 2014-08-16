@@ -11,6 +11,8 @@ ipnames.whitelist_file = minetest.get_worldpath().."/ipnames_whitelist.data"
 
 -- Limit 2 = maximal 2 accounts, the 3rd under the same IP gets blocked
 ipnames.name_per_ip_limit = tonumber(minetest.setting_get("max_names_per_ip")) or 2
+-- 2 + 2 = 4 accounts as limit for "ignored" players
+ipnames.extended_limit = 2
 
 -- Interval where the IP list gets saved/updated
 ipnames.save_interval = 240
@@ -62,11 +64,12 @@ minetest.register_on_prejoinplayer(function(name, ip)
 	
 	local count = 1
 	local names = ""
+	local limit_ext = false
 	for k, v in pairs(ipnames.data) do
 		if v[1] == ip then
-			if ipnames.whitelist[k] then
-				count = 0
-				break
+			if not limit_ext and ipnames.whitelist[k] then
+				count = count - ipnames.extended_limit
+				limit_ext = true
 			end
 			count = count + 1
 			names = names..k..", "
