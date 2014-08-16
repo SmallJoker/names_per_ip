@@ -60,15 +60,13 @@ function ipnames.load_data()
 					ignore = true
 				end
 				if not ignore then
+					data[3] = tonumber(data[3]) or 0
 					-- Remove IP after 2 weeks
-					data[3] = data[3] or ""
-					data[3] = tonumber(data[3])
-					if t - data[3] > (3600 * 24 * 14) then
+					if data[3] > 0 and t - data[3] > (3600 * 24 * 14) then
 						ignore = true
 					end
 				end
 				if not ignore then
-					data[3] = data[3] or 0
 					ipnames.data[data[1]] = {data[2], data[3]}
 				end
 			end
