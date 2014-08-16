@@ -3,51 +3,79 @@
 ipnames = {}
 ipnames.data = {}
 ipnames.tmp_data = {}
+ipnames.whitelist = {}
 ipnames.changes = false
-ipnames.save_interval = 240
 ipnames.save_time = 0
 ipnames.file = minetest.get_worldpath().."/ipnames.data"
+ipnames.whitelist_file = minetest.get_worldpath().."/ipnames_whitelist.data"
 
-ipnames.name_per_ip_limit = 3
+-- Limit 2 = maximal 2 accounts, the 3rd under the same IP gets blocked
+ipnames.name_per_ip_limit = 2
 
--- Get accounts self.
-minetest.register_chatcommand("whois", {
-	description = "Gets all player names which have the same IP as <param>.",
+-- Interval where the IP list gets saved/updated
+ipnames.save_interval = 240
+
+dofile(minetest.get_modpath("names_per_ip").."/functions.lua")
+
+minetest.register_chatcommand("ipnames", {
+	description = "Get the features of names_per_ip",
 	privs = {ban=true},
 	func = function(name, param)
-		if not ipnames.data[param] then
-			minetest.chat_send_player(name, "The player '"..param.."' did not join yet.")
+		if param == "" then
+			minetest.chat_send_player(name, "Available commands: ")
+			minetest.chat_send_player(name, "Get all accounts of <name>: /ipnames whois <name>")
+			minetest.chat_send_player(name, "List all exceptions:        /ipnames list")
+			minetest.chat_send_player(name, "Remove/add an exception:    /ipnames (un)ignore <name>")
+			return
+		end
+		if param == "list" then
+			ipnames.command_list(name)
 			return
 		end
 		
-		local ip = ipnames.data[param]
-		local names = "";
-		for k, v in pairs(ipnames.data) do
-			if v == ip then
-				names = names.." "..k
-			end
+		local args = param:split(" ")
+		if #args < 2 then
+			minetest.chat_send_player(name, "Error: Please check again '/ipnames' for correct usage.")
+			return
 		end
-		minetest.chat_send_player(name, "Following players share an IP: "..names)
-	end,
+		
+		if args[1] == "whois" then
+			ipnames.command_whois(name, args[2])
+		elseif args[1] == "ignore" then
+			ipnames.command_ignore(name, args[2])
+		elseif args[1] == "unignore" then
+			ipnames.command_unignore(name, args[2])
+		else
+			minetest.chat_send_player(name, "Error: No known argument for #1 '"..args[1].."'")
+		end
+	end
 })
 
 -- Get IP if player tries to join, ban if there are too much names per IP
 minetest.register_on_prejoinplayer(function(name, ip)
 	-- Only stop new accounts
 	ipnames.tmp_data[name] = ip
-	if not ipnames.data[name] then
-		local count = 1
-		local names = ""
-		for k, v in pairs(ipnames.data) do
-			if v == ip then
-				count = count + 1
-				names = names..k..", "
+	
+	if ipnames.data[name] then
+		return
+	end
+	
+	local count = 1
+	local names = ""
+	for k, v in pairs(ipnames.data) do
+		if v == ip then
+			if ipnames.whitelist[k] then
+				count = 0
+				break
 			end
+			count = count + 1
+			names = names..k..", "
 		end
-		if count > ipnames.name_per_ip_limit then
-			ipnames.tmp_data[name] = nil
-			return ("\nYou exceeded the limit of accounts.\nYou already own the following accounts:\n"..names)
-		end
+	end
+	-- Return error message if too many accounts have been created
+	if count > ipnames.name_per_ip_limit then
+		ipnames.tmp_data[name] = nil
+		return ("\nYou exceeded the limit of accounts.\nYou already own the following accounts:\n"..names)
 	end
 end)
 
@@ -58,36 +86,6 @@ minetest.register_on_joinplayer(function(player)
 	ipnames.tmp_data[name] = nil
 	ipnames.changes = true
 end)
-
-function ipnames.load_data()
-	local file = io.open(ipnames.file, "r")
-	if not file then
-		return
-	end
-	for line in file:lines() do
-		if line ~= "" then
-			local data = line:split("|")
-			if #data >= 2 then
-				ipnames.data[data[1]] = data[2]
-			end
-		end
-	end
-	io.close(file)
-end
-
-function ipnames.save_data()
-	if not ipnames.changes then
-		return
-	end
-	ipnames.changes = false
-	local file = io.open(ipnames.file, "w")
-	for i, v in pairs(ipnames.data) do
-		if v ~= nil then
-			file:write(i.."|"..v.."\n")
-		end
-	end
-	io.close(file)
-end
 
 minetest.register_globalstep(function(t)
 	ipnames.save_time = ipnames.save_time + t
@@ -101,3 +99,4 @@ end)
 minetest.register_on_shutdown(function() ipnames.save_data() end)
 
 minetest.after(3, function() ipnames.load_data() end)
+minetest.after(3, function() ipnames.load_whitelist() end)
