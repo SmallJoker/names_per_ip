@@ -12,10 +12,10 @@ function ipnames.command_whois(name, param)
 		return
 	end
 	
-	local ip = ipnames.data[param]
+	local ip = ipnames.data[param][1]
 	local names = ""
 	for k, v in pairs(ipnames.data) do
-		if v == ip then
+		if v[1] == ip then
 			names = names.." "..k
 		end
 	end
@@ -61,13 +61,14 @@ function ipnames.load_data()
 				end
 				if #data >= 3 and not ignore then
 					-- Remove IP after 2 weeks
-					local cd = tonumber(data[3])
-					if t - cd > (3600 * 24 * 14) then
+					data[3] = tonumber(data[3])
+					if t - data[3] > (3600 * 24 * 14) then
 						ignore = true
 					end
 				end
 				if not ignore then
-					ipnames.data[data[1]] = data[2]
+					data[3] = data[3] or 0
+					ipnames.data[data[1]] = {data[2], data[3]}
 				end
 			end
 		end
@@ -82,9 +83,7 @@ function ipnames.save_data()
 	ipnames.changes = false
 	local file = io.open(ipnames.file, "w")
 	for k, v in pairs(ipnames.data) do
-		if v ~= nil then
-			file:write(k.."|"..v.."\n")
-		end
+		file:write(k.."|"..v[1].."|"..v[2].."\n")
 	end
 	io.close(file)
 end

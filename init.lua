@@ -63,7 +63,7 @@ minetest.register_on_prejoinplayer(function(name, ip)
 	local count = 1
 	local names = ""
 	for k, v in pairs(ipnames.data) do
-		if v == ip then
+		if v[1] == ip then
 			if ipnames.whitelist[k] then
 				count = 0
 				break
@@ -82,7 +82,8 @@ end)
 -- Save IP if player joined
 minetest.register_on_joinplayer(function(player)
 	local name = player:get_player_name()
-	ipnames.data[name] = ipnames.tmp_data[name]
+	local t = os.time()
+	ipnames.data[name] = {ipnames.tmp_data[name], t}
 	ipnames.tmp_data[name] = nil
 	ipnames.changes = true
 end)
