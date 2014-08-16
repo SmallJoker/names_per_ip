@@ -59,8 +59,9 @@ function ipnames.load_data()
 				if not minetest.auth_table[data[1]] then
 					ignore = true
 				end
-				if #data >= 3 and not ignore then
+				if not ignore then
 					-- Remove IP after 2 weeks
+					data[3] = data[3] or ""
 					data[3] = tonumber(data[3])
 					if t - data[3] > (3600 * 24 * 14) then
 						ignore = true
@@ -83,7 +84,11 @@ function ipnames.save_data()
 	ipnames.changes = false
 	local file = io.open(ipnames.file, "w")
 	for k, v in pairs(ipnames.data) do
-		file:write(k.."|"..v[1].."|"..v[2].."\n")
+		if v[2] > 0 then
+			file:write(k.."|"..v[1].."|"..v[2].."\n")
+		else
+			file:write(k.."|"..v[1].."\n")
+		end
 	end
 	io.close(file)
 end
