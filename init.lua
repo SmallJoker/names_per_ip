@@ -10,7 +10,7 @@ ipnames.file = minetest.get_worldpath().."/ipnames.data"
 ipnames.whitelist_file = minetest.get_worldpath().."/ipnames_whitelist.data"
 
 -- Limit 2 = maximal 2 accounts, the 3rd under the same IP gets blocked
-ipnames.name_per_ip_limit = 2
+ipnames.name_per_ip_limit = tonumber(minetest.setting_get("max_names_per_ip")) or 2
 
 -- Interval where the IP list gets saved/updated
 ipnames.save_interval = 240

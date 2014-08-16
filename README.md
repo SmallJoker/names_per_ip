@@ -13,12 +13,12 @@ Depends: nothing
 Chat commands
 -------------
 
-/ipnames
+	/ipnames
 
-	whois <name>		-> Gets all accounts of <name>
+		whois <name>		-> Gets all accounts of <name>
 
-	list				-> Lists all exceptions/whitelist entries (players which can have "unlimited" accounts)
+		list				-> Lists all exceptions/whitelist entries (players which can have "unlimited" accounts)
 
-	ignore <name>		-> Adds an exception/whitelist entry for <name>
+		ignore <name>		-> Adds an exception/whitelist entry for <name>
 	
-	unignore <name>		-> Removes an exception/whitelist entry for <name>
+		unignore <name>		-> Removes an exception/whitelist entry for <name>
