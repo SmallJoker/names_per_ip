@@ -82,11 +82,8 @@ function ipnames.save_data()
 	ipnames.changes = false
 	local file = io.open(ipnames.file, "w")
 	for k, v in pairs(ipnames.data) do
-		if v[2] > 0 then
-			file:write(k.."|"..v[1].."|"..v[2].."\n")
-		else
-			file:write(k.."|"..v[1].."\n")
-		end
+		v[2] = v[2] or os.time()
+		file:write(k.."|"..v[1].."|"..v[2].."\n")
 	end
 	io.close(file)
 end
