@@ -7,7 +7,7 @@ It will limit the accounts to 2 (+3 if the player is whitelisted) per IP and del
 
 Initial mod creator: Krock
 
-License: WTFPL
+License: CC0
 
 Depends: nothing
 

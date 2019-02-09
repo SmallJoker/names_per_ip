@@ -1,5 +1,11 @@
 -- Created by Krock to stop mass-account-creators
--- License: WTFPL
+-- License: CC0
+
+if not minetest.safe_file_write then
+	error("[simple_protection] Your Minetest version is no longer supported."
+		.. " (version < 0.4.17)")
+end
+
 ipnames = {}
 ipnames.data = {}
 ipnames.tmp_data = {}
@@ -24,32 +30,28 @@ minetest.register_chatcommand("ipnames", {
 	privs = {ban=true},
 	func = function(name, param)
 		if param == "" then
-			minetest.chat_send_player(name, "Available commands: ")
-			minetest.chat_send_player(name, "Get all accounts of <name>: /ipnames whois <name>")
-			minetest.chat_send_player(name, "List all exceptions:        /ipnames list")
-			minetest.chat_send_player(name, "Remove/add an exception:    /ipnames (un)ignore <name>")
-			return
+			return true,
+				"Available commands:\n" ..
+				"Get all accounts of <name>: /ipnames whois <name>\n" ..
+				"Show all whitelisted names: /ipnames list\n" ..
+				"Add/remove whitelist entry: /ipnames (un)ignore <name>"
 		end
 		if param == "list" then
-			ipnames.command_list(name)
-			return
+			return ipnames.command_list(name)
 		end
-		
+
+		-- Commands with two arguments
 		local args = param:split(" ")
 		if #args < 2 then
-			minetest.chat_send_player(name, "Error: Please check again '/ipnames' for correct usage.")
-			return
+			return false, "Error: Too few command arguments."
 		end
-		
-		if args[1] == "whois" then
-			ipnames.command_whois(name, args[2])
-		elseif args[1] == "ignore" then
-			ipnames.command_ignore(name, args[2])
-		elseif args[1] == "unignore" then
-			ipnames.command_unignore(name, args[2])
-		else
-			minetest.chat_send_player(name, "Error: No known argument for #1 '"..args[1].."'")
+
+		local func = ipnames["command_" .. args[1]]
+		if func then
+			return func(name, args[2])
 		end
+
+		return false, "Error: No known action for argument #1 ('"..args[1].."')"
 	end
 })
 
@@ -61,9 +63,8 @@ minetest.register_on_prejoinplayer(function(name, ip)
 	if ipnames.data[name] then
 		return
 	end
-	
-	local count = 1
-	local names = ""
+
+	local names = {} -- faster than string concat
 	local limit_ext = false
 	for k, v in pairs(ipnames.data) do
 		if v[1] == ip then
@@ -71,14 +72,14 @@ minetest.register_on_prejoinplayer(function(name, ip)
 				count = count - ipnames.extended_limit
 				limit_ext = true
 			end
-			count = count + 1
-			names = names..k..", "
+			names[#names + 1] = k
 		end
 	end
 	-- Return error message if too many accounts have been created
-	if count > ipnames.name_per_ip_limit then
+	if #names > ipnames.name_per_ip_limit then
 		ipnames.tmp_data[name] = nil
-		return ("\nYou exceeded the limit of accounts.\nYou already own the following accounts:\n"..names)
+		return "\nYou exceeded the limit of accounts.\n" ..
+			"You already own the following accounts:\n" .. table.concat(names, ", ")
 	end
 end)
 
@@ -100,7 +101,7 @@ minetest.register_globalstep(function(t)
 	ipnames.save_data()
 end)
 
-minetest.register_on_shutdown(function() ipnames.save_data() end)
+minetest.register_on_shutdown(ipnames.save_data)
 
-minetest.after(3, function() ipnames.load_data() end)
-minetest.after(3, function() ipnames.load_whitelist() end)
+minetest.after(3, ipnames.load_data)
+minetest.after(3, ipnames.load_whitelist)
