@@ -59,24 +59,23 @@ minetest.register_chatcommand("ipnames", {
 minetest.register_on_prejoinplayer(function(name, ip)
 	-- Only stop new accounts
 	ipnames.tmp_data[name] = ip
-	
+
 	if ipnames.data[name] then
 		return
 	end
 
 	local names = {} -- faster than string concat
-	local limit_ext = false
+	local count_bonus = nil
 	for k, v in pairs(ipnames.data) do
 		if v[1] == ip then
-			if not limit_ext and ipnames.whitelist[k] then
-				count = count - ipnames.extended_limit
-				limit_ext = true
+			if not count_bonus and ipnames.whitelist[k] then
+				count_bonus = ipnames.extended_limit
 			end
 			names[#names + 1] = k
 		end
 	end
 	-- Return error message if too many accounts have been created
-	if #names > ipnames.name_per_ip_limit then
+	if #names > ipnames.name_per_ip_limit + (count_bonus or 0) then
 		ipnames.tmp_data[name] = nil
 		return "\nYou exceeded the limit of accounts.\n" ..
 			"You already own the following accounts:\n" .. table.concat(names, ", ")
@@ -90,6 +89,11 @@ minetest.register_on_joinplayer(function(player)
 	ipnames.data[name] = {ipnames.tmp_data[name], t}
 	ipnames.tmp_data[name] = nil
 	ipnames.changes = true
+end)
+
+-- Clean up garbage
+minetest.register_on_leaveplayer(function(player)
+	ipnames.tmp_data[player:get_player_name()] = nil
 end)
 
 minetest.register_globalstep(function(t)
