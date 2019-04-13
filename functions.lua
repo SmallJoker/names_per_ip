@@ -45,7 +45,7 @@ function ipnames.command_unignore(name, param)
 	return true, "Removed '" .. param .. "' from the name whitelist."
 end
 
-local player_auth_exists = minetest.player_exists
+ipnames.is_registered = minetest.player_exists
 	or function(name)
 		-- 0.4.x support: If you get a nil error here -> update Minetest
 		return minetest.auth_table[name]
@@ -62,7 +62,7 @@ function ipnames.load_data()
 		local data = line:split("|")
 		if #data >= 2 then
 			-- Ignore players which were removed (according to auth)
-			local player_exists = player_auth_exists(data[1])
+			local player_exists = ipnames.is_registered(data[1])
 
 			if player_exists then
 				data[3] = tonumber(data[3]) or 0

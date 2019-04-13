@@ -8,7 +8,6 @@ end
 
 ipnames = {}
 ipnames.data = {}
-ipnames.tmp_data = {}
 ipnames.whitelist = {}
 ipnames.changes = false
 ipnames.save_time = 0
@@ -58,9 +57,7 @@ minetest.register_chatcommand("ipnames", {
 -- Get IP if player tries to join, ban if there are too much names per IP
 minetest.register_on_prejoinplayer(function(name, ip)
 	-- Only stop new accounts
-	ipnames.tmp_data[name] = ip
-
-	if ipnames.data[name] then
+	if ipnames.data[name] or ipnames.is_registered(name) then
 		return
 	end
 
@@ -76,7 +73,6 @@ minetest.register_on_prejoinplayer(function(name, ip)
 	end
 	-- Return error message if too many accounts have been created
 	if #names > ipnames.name_per_ip_limit + (count_bonus or 0) then
-		ipnames.tmp_data[name] = nil
 		return "\nYou exceeded the limit of accounts.\n" ..
 			"You already own the following accounts:\n" .. table.concat(names, ", ")
 	end
@@ -85,15 +81,19 @@ end)
 -- Save IP if player joined
 minetest.register_on_joinplayer(function(player)
 	local name = player:get_player_name()
-	local t = os.time()
-	ipnames.data[name] = {ipnames.tmp_data[name], t}
-	ipnames.tmp_data[name] = nil
-	ipnames.changes = true
-end)
+	local time = os.time()
+	local player_info = minetest.get_player_information(name)
+	if not player_info.address then
+		minetest.log("warning", "[names_per_ip] Failed to get the IP address for " ..
+			name .. ". This should not happen.")
+	end
 
--- Clean up garbage
-minetest.register_on_leaveplayer(function(player)
-	ipnames.tmp_data[player:get_player_name()] = nil
+	ipnames.data[name] = {
+		player_info.address or "??",
+		time
+	}
+
+	ipnames.changes = true
 end)
 
 minetest.register_globalstep(function(t)
