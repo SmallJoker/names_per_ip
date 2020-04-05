@@ -10,7 +10,6 @@ ipnames = {}
 ipnames.data = {}
 ipnames.whitelist = {}
 ipnames.changes = false
-ipnames.save_time = 0
 ipnames.file = minetest.get_worldpath().."/ipnames.data"
 ipnames.whitelist_file = minetest.get_worldpath().."/ipnames_whitelist.data"
 
@@ -79,33 +78,41 @@ minetest.register_on_prejoinplayer(function(name, ip)
 end)
 
 -- Save IP if player joined
-minetest.register_on_joinplayer(function(player)
-	local name = player:get_player_name()
-	local time = os.time()
-	local player_info = minetest.get_player_information(name)
-	if not player_info.address then
-		minetest.log("warning", "[names_per_ip] Failed to get the IP address for " ..
-			name .. ". This should not happen.")
+local function update_player_address(name, recursive)
+	local info = minetest.get_player_information(name)
+	local address = info and info.address
+
+	if not address then
+		minetest.log("warning", "[names_per_ip] minetest.get_player_information(\"" ..
+			name .. "\"): " .. dump(info) .. ". This is probably an engine bug.")
+		if not recursive then
+			-- Delay, hope it works next time
+			minetest.after(0.5, update_address, name, true)
+			return
+		end
 	end
 
 	ipnames.data[name] = {
-		player_info.address or "??",
-		time
+		address or "??",
+		os.time()
 	}
 
 	ipnames.changes = true
+end
+
+minetest.register_on_joinplayer(function(player)
+	update_player_address(player:get_player_name())
 end)
 
-minetest.register_globalstep(function(t)
-	ipnames.save_time = ipnames.save_time + t
-	if ipnames.save_time < ipnames.save_interval then
-		return
-	end
-	ipnames.save_time = 0
+-- Save changes at a fixed interval
+local function save_data_job()
 	ipnames.save_data()
-end)
+	minetest.after(ipnames.save_interval, save_data_job)
+end
+minetest.after(ipnames.save_interval, save_data_job)
 
 minetest.register_on_shutdown(ipnames.save_data)
 
-minetest.after(3, ipnames.load_data)
-minetest.after(3, ipnames.load_whitelist)
+
+ipnames.load_data()
+ipnames.load_whitelist()
