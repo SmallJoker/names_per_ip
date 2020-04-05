@@ -87,7 +87,7 @@ local function update_player_address(name, recursive)
 			name .. "\"): " .. dump(info) .. ". This is probably an engine bug.")
 		if not recursive then
 			-- Delay, hope it works next time
-			minetest.after(0.5, update_address, name, true)
+			minetest.after(0.5, update_player_address, name, true)
 			return
 		end
 	end
