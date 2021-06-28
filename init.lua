@@ -70,6 +70,7 @@ minetest.register_on_prejoinplayer(function(name, ip)
 			names[#names + 1] = k
 		end
 	end
+
 	-- Return error message if too many accounts have been created
 	if #names > ipnames.name_per_ip_limit + (count_bonus or 0) then
 		return "\nYou exceeded the limit of accounts.\n" ..
@@ -104,15 +105,17 @@ minetest.register_on_joinplayer(function(player)
 	update_player_address(player:get_player_name())
 end)
 
+-- Data saving routine
 -- Save changes at a fixed interval
 local function save_data_job()
 	ipnames.save_data()
 	minetest.after(ipnames.save_interval, save_data_job)
 end
 minetest.after(ipnames.save_interval, save_data_job)
-
 minetest.register_on_shutdown(ipnames.save_data)
 
+-- Due to use of minetest.player_exists, the data loading must be delayed
+-- until ServerEnvironment is set up. register_on_mods_loaded is still too early.
+minetest.after(0, ipnames.load_data)
 
-ipnames.load_data()
 ipnames.load_whitelist()
