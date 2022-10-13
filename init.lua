@@ -14,7 +14,7 @@ ipnames.file = minetest.get_worldpath().."/ipnames.data"
 ipnames.whitelist_file = minetest.get_worldpath().."/ipnames_whitelist.data"
 
 -- Limit 2 = maximal 2 accounts, the 3rd under the same IP gets blocked
-ipnames.name_per_ip_limit = tonumber(minetest.setting_get("max_names_per_ip")) or 2
+ipnames.name_per_ip_limit = tonumber(minetest.settings:get("max_names_per_ip")) or 2
 -- 2 + 3 = 5 accounts as limit for "ignored" players
 ipnames.extended_limit = 3
 
